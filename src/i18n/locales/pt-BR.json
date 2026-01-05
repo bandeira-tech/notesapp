@@ -1,0 +1,111 @@
+{
+  "app": {
+    "name": "Firecat Notes",
+    "tagline": "Cadernos descentralizados para seus pensamentos"
+  },
+  "nav": {
+    "home": "Início",
+    "discover": "Descobrir",
+    "login": "Entrar",
+    "logout": "Sair",
+    "settings": "Configurações"
+  },
+  "home": {
+    "title": "Meus Cadernos",
+    "subtitle": "Seu espaço pessoal para pensamentos e ideias",
+    "newNotebook": "Novo Caderno",
+    "creating": "Criando...",
+    "noNotebooks": "Nenhum caderno ainda",
+    "createFirst": "Crie seu primeiro caderno para começar"
+  },
+  "discover": {
+    "title": "Descobrir",
+    "subtitle": "Explore cadernos públicos da comunidade",
+    "noNotebooks": "Nenhum caderno público ainda",
+    "beFirst": "Seja o primeiro a compartilhar seus pensamentos com o mundo!",
+    "createPublic": "Criar Caderno Público"
+  },
+  "notebook": {
+    "back": "Voltar",
+    "posts": "posts",
+    "noPosts": "Nenhum post ainda.",
+    "noPostsOwner": "Nenhum post ainda. Compartilhe seu primeiro pensamento!",
+    "protected": "Caderno Protegido",
+    "protectedDescription": "Este caderno requer uma senha para acessar.",
+    "enterPassword": "Digite a senha",
+    "unlock": "Desbloquear",
+    "goBack": "Voltar",
+    "wrongPassword": "Senha incorreta ou caderno não encontrado",
+    "tryAgain": "Tentar novamente",
+    "notFound": "Caderno não encontrado",
+    "loading": "Carregando caderno...",
+    "by": "por"
+  },
+  "post": {
+    "placeholder": "O que está em sua mente? (Alt+Enter para postar)",
+    "addImage": "Adicionar Imagem",
+    "cancel": "Cancelar",
+    "submit": "Postar",
+    "notFound": "Post não encontrado",
+    "backToNotebook": "Voltar ao caderno",
+    "viewInContext": "Ver no contexto do caderno",
+    "loading": "Carregando post..."
+  },
+  "auth": {
+    "welcomeBack": "Bem-vindo de volta",
+    "loginDescription": "Entre para acessar seus cadernos",
+    "username": "Nome de usuário",
+    "password": "Senha",
+    "loggingIn": "Entrando...",
+    "login": "Entrar",
+    "logout": "Sair",
+    "error": "Falha no login. Verifique suas credenciais."
+  },
+  "settings": {
+    "title": "Configurações",
+    "theme": "Tema",
+    "themeDescription": "Escolha seu esquema de cores preferido",
+    "themes": {
+      "default": "Padrão",
+      "peaceful": "Tranquilo",
+      "ocean": "Oceano",
+      "forest": "Floresta"
+    },
+    "appearance": "Aparência",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema",
+    "language": "Idioma",
+    "languageDescription": "Escolha seu idioma preferido"
+  },
+  "visibility": {
+    "public": "público",
+    "protected": "protegido",
+    "private": "privado"
+  },
+  "common": {
+    "goHome": "Ir para Início",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "share": "Compartilhar",
+    "copied": "Link copiado!"
+  },
+  "errors": {
+    "configuration": "Erro de Configuração",
+    "notAuthenticated": "Não autenticado. Por favor, faça login.",
+    "generic": "Algo deu errado. Por favor, tente novamente."
+  },
+  "time": {
+    "justNow": "agora mesmo",
+    "minutesAgo": "{{count}} minuto atrás",
+    "minutesAgo_plural": "{{count}} minutos atrás",
+    "hoursAgo": "{{count}} hora atrás",
+    "hoursAgo_plural": "{{count}} horas atrás",
+    "daysAgo": "{{count}} dia atrás",
+    "daysAgo_plural": "{{count}} dias atrás"
+  }
+}

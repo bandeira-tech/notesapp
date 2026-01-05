@@ -1,0 +1,111 @@
+{
+  "app": {
+    "name": "Firecat Notes",
+    "tagline": "Decentralized notebooks for your thoughts"
+  },
+  "nav": {
+    "home": "Home",
+    "discover": "Discover",
+    "login": "Login",
+    "logout": "Logout",
+    "settings": "Settings"
+  },
+  "home": {
+    "title": "My Notebooks",
+    "subtitle": "Your personal space for thoughts and ideas",
+    "newNotebook": "New Notebook",
+    "creating": "Creating...",
+    "noNotebooks": "No notebooks yet",
+    "createFirst": "Create your first notebook to get started"
+  },
+  "discover": {
+    "title": "Discover",
+    "subtitle": "Explore public notebooks from the community",
+    "noNotebooks": "No public notebooks yet",
+    "beFirst": "Be the first to share your thoughts with the world!",
+    "createPublic": "Create Public Notebook"
+  },
+  "notebook": {
+    "back": "Back",
+    "posts": "posts",
+    "noPosts": "No posts yet.",
+    "noPostsOwner": "No posts yet. Share your first thought!",
+    "protected": "Protected Notebook",
+    "protectedDescription": "This notebook requires a password to access.",
+    "enterPassword": "Enter password",
+    "unlock": "Unlock",
+    "goBack": "Go Back",
+    "wrongPassword": "Wrong password or notebook not found",
+    "tryAgain": "Try again",
+    "notFound": "Notebook not found",
+    "loading": "Loading notebook...",
+    "by": "by"
+  },
+  "post": {
+    "placeholder": "What's on your mind? (Alt+Enter to post)",
+    "addImage": "Add Image",
+    "cancel": "Cancel",
+    "submit": "Post",
+    "notFound": "Post not found",
+    "backToNotebook": "Back to notebook",
+    "viewInContext": "View in notebook context",
+    "loading": "Loading post..."
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "loginDescription": "Sign in to access your notebooks",
+    "username": "Username",
+    "password": "Password",
+    "loggingIn": "Logging in...",
+    "login": "Login",
+    "logout": "Logout",
+    "error": "Login failed. Please check your credentials."
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "themeDescription": "Choose your preferred color scheme",
+    "themes": {
+      "default": "Default",
+      "peaceful": "Peaceful",
+      "ocean": "Ocean",
+      "forest": "Forest"
+    },
+    "appearance": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "language": "Language",
+    "languageDescription": "Choose your preferred language"
+  },
+  "visibility": {
+    "public": "public",
+    "protected": "protected",
+    "private": "private"
+  },
+  "common": {
+    "goHome": "Go Home",
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "share": "Share",
+    "copied": "Link copied to clipboard!"
+  },
+  "errors": {
+    "configuration": "Configuration Error",
+    "notAuthenticated": "Not authenticated. Please login first.",
+    "generic": "Something went wrong. Please try again."
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{{count}} minute ago",
+    "minutesAgo_plural": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hour ago",
+    "hoursAgo_plural": "{{count}} hours ago",
+    "daysAgo": "{{count}} day ago",
+    "daysAgo_plural": "{{count}} days ago"
+  }
+}
