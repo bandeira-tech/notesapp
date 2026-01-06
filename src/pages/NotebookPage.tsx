@@ -193,30 +193,40 @@ export function NotebookPage() {
         </div>
       </div>
 
-      {/* Timeline */}
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {isOwner && (
-          <CreatePostForm
-            notebookPubkey={notebookPubkey!}
-            visibility={notebook.visibility}
-            password={effectivePassword}
-          />
-        )}
-
+      {/* Timeline - posts come directly after header */}
+      <div className={`${isOwner ? "pb-32" : ""}`}>
         {posts && posts.length > 0 ? (
-          <div className="bg-theme-bg-secondary rounded-xl shadow-sm border border-theme-border-light px-6">
+          <div className="bg-theme-bg-secondary shadow-sm border-b border-theme-border-light px-6">
             {posts.map((post) => (
-              <PostCard key={post.pubkey} post={post} />
+              <PostCard
+                key={post.pubkey}
+                post={post}
+                visibility={notebook.visibility}
+                password={effectivePassword}
+              />
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 text-theme-text-muted">
+          <div className="max-w-4xl mx-auto text-center py-16 text-theme-text-muted">
             {isOwner
               ? t("notebook.noPostsOwner")
               : t("notebook.noPosts")}
           </div>
         )}
       </div>
+
+      {/* Fixed input overlay for author */}
+      {isOwner && (
+        <div className="fixed bottom-0 left-0 right-0 bg-theme-bg-primary border-t border-theme-border-light shadow-lg">
+          <div className="max-w-4xl mx-auto px-4 py-4">
+            <CreatePostForm
+              notebookPubkey={notebookPubkey!}
+              visibility={notebook.visibility}
+              password={effectivePassword}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

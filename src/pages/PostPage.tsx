@@ -44,7 +44,7 @@ export function PostPage() {
         </button>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-6 mb-4">
-          <PostCard post={post} />
+          <PostCard post={post} visibility="public" />
         </div>
 
         <button
