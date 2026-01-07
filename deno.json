@@ -1,0 +1,12 @@
+{
+  "name": "@firecat/notes",
+  "version": "0.1.0",
+  "description": "Decentralized notebook and microblogging app on B3nd/Firecat network - beautiful, peaceful spaces for posting and sharing data in a trustworthy, decentralized network",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "imports": {
+    "react": "npm:react@19.1.0",
+    "react-dom": "npm:react-dom@19.1.0"
+  }
+}
