@@ -1,15 +1,15 @@
 import { Card, CardContent } from "../ui/Card";
-import type { Notebook, PublicNotebookEntry, Visibility } from "../../types";
+import type { Notebook } from "../../types";
 import { Lock, Globe, Shield, BookOpen } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface NotebookCardProps {
-  notebook: Notebook | (PublicNotebookEntry & { visibility?: Visibility });
+  notebook: Notebook;
   onClick: () => void;
 }
 
 export function NotebookCard({ notebook, onClick }: NotebookCardProps) {
-  const visibility: Visibility = "visibility" in notebook && notebook.visibility ? notebook.visibility : "public";
+  const visibility = notebook.visibility;
 
   const VisibilityIcon = {
     public: Globe,

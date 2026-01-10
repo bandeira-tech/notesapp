@@ -39,7 +39,16 @@
     "tryAgain": "Try again",
     "notFound": "Notebook not found",
     "loading": "Loading notebook...",
-    "by": "by"
+    "by": "by",
+    "editSettings": "Notebook Settings",
+    "title": "Title",
+    "titlePlaceholder": "Enter notebook title",
+    "description": "Description",
+    "descriptionPlaceholder": "Add a description (optional)",
+    "visibility": "Visibility",
+    "setPassword": "Password",
+    "changePassword": "Change Password",
+    "leaveEmptyToKeepPassword": "Leave empty to keep current password"
   },
   "post": {
     "placeholder": "What's on your mind? (Alt+Enter to post)",
@@ -79,15 +88,19 @@
     "languageDescription": "Choose your preferred language"
   },
   "visibility": {
-    "public": "public",
-    "protected": "protected",
-    "private": "private"
+    "public": "Public",
+    "protected": "Protected",
+    "private": "Private",
+    "publicDescription": "Anyone can discover and view this notebook",
+    "protectedDescription": "Only people with the password can view this notebook",
+    "privateDescription": "Only you can view this notebook"
   },
   "common": {
     "goHome": "Go Home",
     "loading": "Loading...",
     "error": "Error",
     "save": "Save",
+    "saving": "Saving...",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",

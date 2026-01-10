@@ -15,11 +15,6 @@ import {
   decryptSymmetric,
 } from "@bandeira-tech/b3nd-web/encrypt";
 
-// App identity seed - used to derive deterministic app keypair
-// In production, this would be managed securely
-const APP_SEED = "firecat-notes-app-identity-v1";
-const APP_SALT = "firecat-notes-salt-v1";
-
 export interface Identity {
   publicKeyHex: string;
   privateKeyHex: string;
@@ -30,38 +25,38 @@ export interface SignedMessage<T = unknown> {
   payload: T;
 }
 
+// Session management
+export interface SessionKeypair {
+  publicKeyHex: string;
+  privateKeyHex: string;
+  createdAt: number;
+}
+
+const SESSION_STORAGE_KEY = "firecat-notes-session-keypair";
+
 // Cache for app identity
 let appIdentity: Identity | null = null;
 
 /**
- * Get the app's identity (deterministic keypair)
+ * Get the app's identity from environment variables
  * Used for writing shared data like public notebook index
  */
 export async function getAppIdentity(): Promise<Identity> {
   if (appIdentity) return appIdentity;
 
-  // Derive a deterministic key from the seed
-  // Note: In production, this would be used to derive the keypair deterministically
-  await deriveKeyFromSeed(APP_SEED, APP_SALT, 100000);
+  const publicKeyHex = import.meta.env.VITE_APP_PUBLIC_KEY;
+  const privateKeyHex = import.meta.env.VITE_APP_PRIVATE_KEY;
 
-  // For now, generate a fresh one and store in localStorage for persistence
-  const stored = localStorage.getItem("firecat-app-identity");
-  if (stored) {
-    appIdentity = JSON.parse(stored);
-    return appIdentity!;
+  if (!publicKeyHex || !privateKeyHex) {
+    throw new Error("VITE_APP_PUBLIC_KEY and VITE_APP_PRIVATE_KEY must be set in .env file");
   }
 
-  // Generate new keypair for the app
-  const keypair = await generateSigningKeyPair();
   appIdentity = {
-    publicKeyHex: keypair.publicKeyHex,
-    privateKeyHex: keypair.privateKeyHex,
+    publicKeyHex,
+    privateKeyHex,
   };
 
-  // Store for persistence
-  localStorage.setItem("firecat-app-identity", JSON.stringify(appIdentity));
-
-  console.log("🔑 Generated app identity:", appIdentity.publicKeyHex);
+  console.log("🔑 App identity loaded:", appIdentity.publicKeyHex.substring(0, 16) + "...");
   return appIdentity;
 }
 
@@ -114,4 +109,52 @@ export async function decryptPrivateKey(
     key: string;
   };
   return decrypted.key;
+}
+
+/**
+ * Session Management Functions
+ */
+
+/**
+ * Generate a new session keypair and store it
+ */
+export async function generateSessionKeypair(): Promise<SessionKeypair> {
+  const keypair = await generateSigningKeyPair();
+  const session: SessionKeypair = {
+    publicKeyHex: keypair.publicKeyHex,
+    privateKeyHex: keypair.privateKeyHex,
+    createdAt: Date.now(),
+  };
+  saveSessionKeypair(session);
+  console.log("🔑 Generated session keypair:", session.publicKeyHex.substring(0, 16) + "...");
+  return session;
+}
+
+/**
+ * Get stored session keypair from localStorage
+ */
+export function getSessionKeypair(): SessionKeypair | null {
+  try {
+    const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored) as SessionKeypair;
+    }
+  } catch (error) {
+    console.error("Failed to load session keypair:", error);
+  }
+  return null;
+}
+
+/**
+ * Save session keypair to localStorage
+ */
+export function saveSessionKeypair(session: SessionKeypair): void {
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+}
+
+/**
+ * Clear session keypair from localStorage
+ */
+export function clearSessionKeypair(): void {
+  localStorage.removeItem(SESSION_STORAGE_KEY);
 }

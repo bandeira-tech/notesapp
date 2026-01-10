@@ -7,13 +7,10 @@ import {
 } from "../lib/b3nd-client";
 import type { Identity } from "../lib/identity";
 import { useAuthStore } from "../stores/authStore";
-import { useNotebookStore } from "../stores/notebookStore";
 import type { Notebook, NotebookRef, PublicNotebookEntry, Visibility } from "../types";
 import {
   getNotebookMetaUri,
-  getUserNotebookRefUri,
-  getUserNotebooksListUri,
-  getNotebookKeyUri,
+  getUserNotebooksIndexUri,
   getPublicNotebookIndexUri,
   getPublicNotebooksListUri,
 } from "../utils/uris";
@@ -22,7 +19,7 @@ import {
 const notebookIdentities = new Map<string, Identity>();
 
 /**
- * Load a notebook's identity from user's account
+ * Load a notebook's identity from user's account index
  */
 async function loadNotebookIdentity(notebookPubkey: string): Promise<Identity | null> {
   // Check cache
@@ -30,15 +27,17 @@ async function loadNotebookIdentity(notebookPubkey: string): Promise<Identity | 
     return notebookIdentities.get(notebookPubkey)!;
   }
 
-  // Load from user's account
-  const keyUri = getNotebookKeyUri(notebookPubkey);
-  const stored = await b3ndClient.readPrivate<{ privateKeyHex: string }>(keyUri);
+  // Load from user's notebooks index
+  const indexUri = getUserNotebooksIndexUri();
+  const index = await b3ndClient.readPrivate<{ notebooks: NotebookRef[]; keys: Record<string, string> }>(indexUri);
 
-  if (!stored) return null;
+  if (!index || !index.keys || !index.keys[notebookPubkey]) {
+    return null;
+  }
 
   const identity: Identity = {
     publicKeyHex: notebookPubkey,
-    privateKeyHex: stored.privateKeyHex,
+    privateKeyHex: index.keys[notebookPubkey],
   };
 
   notebookIdentities.set(notebookPubkey, identity);
@@ -76,15 +75,20 @@ export function useUserNotebooks(userPubkey?: string) {
     queryFn: async () => {
       if (!targetPubkey || !walletClient.isAuthenticated()) return [];
 
-      // List notebook references from user's account
-      const listUri = getUserNotebooksListUri();
-      const refs = await b3ndClient.list<NotebookRef>(listUri, {
-        visibility: "private", // User's own data
-      });
+      // Read notebook index from user's account (single file with all refs)
+      const indexUri = getUserNotebooksIndexUri();
+      const index = await b3ndClient.readPrivate<{ notebooks: NotebookRef[] }>(indexUri);
+
+      if (!index || !index.notebooks || index.notebooks.length === 0) {
+        console.log("📋 No notebooks found in index");
+        return [];
+      }
+
+      console.log(`📋 Found ${index.notebooks.length} notebooks in index`);
 
       // For each reference, load the full notebook metadata
       const notebooks: Notebook[] = [];
-      for (const ref of refs) {
+      for (const ref of index.notebooks) {
         try {
           const metaUri = getNotebookMetaUri(ref.pubkey);
           const notebook = await b3ndClient.read<Notebook>(metaUri, {
@@ -114,11 +118,28 @@ export function usePublicNotebooks() {
       const appIdentity = await getAppIdentity();
       const listUri = getPublicNotebooksListUri(appIdentity.publicKeyHex);
 
+      // Get list of references from public index
       const entries = await b3ndClient.list<PublicNotebookEntry>(listUri, {
         visibility: "public",
       });
 
-      return entries.sort((a, b) => b.updatedAt - a.updatedAt);
+      // Resolve actual metadata for each notebook
+      const notebooks: Notebook[] = [];
+      for (const entry of entries) {
+        try {
+          const metaUri = getNotebookMetaUri(entry.pubkey);
+          const notebook = await b3ndClient.read<Notebook>(metaUri, {
+            visibility: "public",
+          });
+          if (notebook) {
+            notebooks.push(notebook);
+          }
+        } catch (err) {
+          console.warn(`Failed to load public notebook ${entry.pubkey}:`, err);
+        }
+      }
+
+      return notebooks.sort((a, b) => b.updatedAt - a.updatedAt);
     },
   });
 }
@@ -129,7 +150,6 @@ export function usePublicNotebooks() {
 export function useCreateNotebook() {
   const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
-  const addNotebook = useNotebookStore((s) => s.addNotebook);
 
   return useMutation({
     mutationFn: async (params: {
@@ -171,23 +191,26 @@ export function useCreateNotebook() {
         throw new Error("Failed to create notebook");
       }
 
-      // 3. Store notebook's private key in user's account (encrypted)
-      const keyUri = getNotebookKeyUri(notebookIdentity.publicKeyHex);
-      await b3ndClient.writePrivate(keyUri, {
-        privateKeyHex: notebookIdentity.privateKeyHex,
-      });
+      // 3. Add to user's notebooks index (read-modify-write)
+      const indexUri = getUserNotebooksIndexUri();
+      const currentIndex = await b3ndClient.readPrivate<{ notebooks: NotebookRef[]; keys: Record<string, string> }>(indexUri) || { notebooks: [], keys: {} };
 
-      // 4. Store notebook reference in user's account
-      const refUri = getUserNotebookRefUri(notebookIdentity.publicKeyHex);
       const notebookRef: NotebookRef = {
         pubkey: notebookIdentity.publicKeyHex,
         title: params.title,
         visibility: params.visibility,
         createdAt: now,
       };
-      await b3ndClient.writePrivate(refUri, notebookRef);
 
-      // 5. If public, add to app's public index
+      // Add notebook ref and private key to index
+      currentIndex.notebooks.push(notebookRef);
+      currentIndex.keys[notebookIdentity.publicKeyHex] = notebookIdentity.privateKeyHex;
+
+      // Write updated index
+      await b3ndClient.writePrivate(indexUri, currentIndex);
+      console.log(`📝 Added notebook to user index (${currentIndex.notebooks.length} total)`);
+
+      // 5. If public, add to app's public index (reference only, no denormalized data)
       if (params.visibility === "public") {
         const appIdentity = await getAppIdentity();
         const indexUri = getPublicNotebookIndexUri(
@@ -196,12 +219,8 @@ export function useCreateNotebook() {
         );
         const entry: PublicNotebookEntry = {
           pubkey: notebookIdentity.publicKeyHex,
-          title: params.title,
-          description: params.description,
           author: { pubkey: session.username },
-          postCount: 0,
           createdAt: now,
-          updatedAt: now,
         };
         await b3ndClient.write(indexUri, entry, appIdentity, {
           visibility: "public",
@@ -214,7 +233,6 @@ export function useCreateNotebook() {
       return notebook;
     },
     onSuccess: (notebook) => {
-      addNotebook(notebook);
       queryClient.invalidateQueries({ queryKey: ["user-notebooks"] });
       if (notebook.visibility === "public") {
         queryClient.invalidateQueries({ queryKey: ["public-notebooks"] });
@@ -228,7 +246,6 @@ export function useCreateNotebook() {
  */
 export function useUpdateNotebook() {
   const queryClient = useQueryClient();
-  const updateNotebook = useNotebookStore((s) => s.updateNotebook);
   const session = useAuthStore((s) => s.session);
 
   return useMutation({
@@ -237,10 +254,11 @@ export function useUpdateNotebook() {
       updates: Partial<Notebook>;
       visibility: Visibility;
       password?: string;
+      newPassword?: string;
     }) => {
       if (!session) throw new Error("Not authenticated");
 
-      const { notebookPubkey, updates, visibility, password } = params;
+      const { notebookPubkey, updates, visibility, password, newPassword } = params;
 
       // Load notebook identity
       const identity = await loadNotebookIdentity(notebookPubkey);
@@ -259,20 +277,75 @@ export function useUpdateNotebook() {
         updatedAt: Date.now(),
       };
 
-      // Write updated metadata
+      const oldVisibility = current.visibility;
+      const newVisibility = updated.visibility;
+      const now = Date.now();
+
+      // Write updated metadata with new visibility
       const success = await b3ndClient.write(metaUri, updated, identity, {
-        visibility,
-        password,
+        visibility: newVisibility,
+        password: newVisibility === "protected" ? newPassword : undefined,
       });
       if (!success) {
         throw new Error("Failed to update notebook");
       }
 
+      // Handle visibility changes for public index
+      const appIdentity = await getAppIdentity();
+
+      // If changing FROM public, remove from public index
+      if (oldVisibility === "public" && newVisibility !== "public") {
+        const indexUri = getPublicNotebookIndexUri(
+          appIdentity.publicKeyHex,
+          notebookPubkey
+        );
+        await b3ndClient.delete(indexUri, appIdentity);
+      }
+
+      // If changing TO public, add to public index
+      if (oldVisibility !== "public" && newVisibility === "public") {
+        const indexUri = getPublicNotebookIndexUri(
+          appIdentity.publicKeyHex,
+          notebookPubkey
+        );
+        const entry: PublicNotebookEntry = {
+          pubkey: notebookPubkey,
+          author: { pubkey: session.username },
+          createdAt: now,
+        };
+        await b3ndClient.write(indexUri, entry, appIdentity, {
+          visibility: "public",
+        });
+      }
+
+      // Update user's notebook index with new visibility
+      const userIndexUri = getUserNotebooksIndexUri();
+      const userIndex = await b3ndClient.readPrivate<{ notebooks: NotebookRef[]; keys: Record<string, string> }>(userIndexUri);
+
+      if (userIndex) {
+        const notebookIndex = userIndex.notebooks.findIndex(ref => ref.pubkey === notebookPubkey);
+        if (notebookIndex !== -1) {
+          userIndex.notebooks[notebookIndex] = {
+            ...userIndex.notebooks[notebookIndex],
+            title: updated.title,
+            visibility: updated.visibility,
+          };
+          await b3ndClient.writePrivate(userIndexUri, userIndex);
+        }
+      }
+
       return updated;
     },
-    onSuccess: (notebook) => {
-      updateNotebook(notebook.pubkey, notebook);
+    onSuccess: (notebook, variables) => {
       queryClient.invalidateQueries({ queryKey: ["notebook", notebook.pubkey] });
+      queryClient.invalidateQueries({ queryKey: ["user-notebooks"] });
+      // Invalidate public notebooks if either old or new visibility was public
+      const wasPublic = variables.updates.visibility
+        ? variables.visibility === "public" || notebook.visibility === "public"
+        : notebook.visibility === "public";
+      if (wasPublic) {
+        queryClient.invalidateQueries({ queryKey: ["public-notebooks"] });
+      }
     },
   });
 }
@@ -282,7 +355,6 @@ export function useUpdateNotebook() {
  */
 export function useDeleteNotebook() {
   const queryClient = useQueryClient();
-  const removeNotebook = useNotebookStore((s) => s.removeNotebook);
   const session = useAuthStore((s) => s.session);
 
   return useMutation({
@@ -304,13 +376,16 @@ export function useDeleteNotebook() {
       const metaUri = getNotebookMetaUri(notebookPubkey);
       await b3ndClient.delete(metaUri, identity);
 
-      // Delete from user's references
-      const refUri = getUserNotebookRefUri(notebookPubkey);
-      await b3ndClient.delete(refUri);
+      // Remove from user's notebooks index
+      const indexUri = getUserNotebooksIndexUri();
+      const currentIndex = await b3ndClient.readPrivate<{ notebooks: NotebookRef[]; keys: Record<string, string> }>(indexUri);
 
-      // Delete private key from user's account
-      const keyUri = getNotebookKeyUri(notebookPubkey);
-      await b3ndClient.delete(keyUri);
+      if (currentIndex) {
+        currentIndex.notebooks = currentIndex.notebooks.filter(ref => ref.pubkey !== notebookPubkey);
+        delete currentIndex.keys[notebookPubkey];
+        await b3ndClient.writePrivate(indexUri, currentIndex);
+        console.log(`🗑️ Removed notebook from user index (${currentIndex.notebooks.length} remaining)`);
+      }
 
       // If public, remove from app's index
       if (visibility === "public") {
@@ -327,10 +402,11 @@ export function useDeleteNotebook() {
 
       return notebookPubkey;
     },
-    onSuccess: (notebookPubkey) => {
-      removeNotebook(notebookPubkey);
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["user-notebooks"] });
-      queryClient.invalidateQueries({ queryKey: ["public-notebooks"] });
+      if (variables.visibility === "public") {
+        queryClient.invalidateQueries({ queryKey: ["public-notebooks"] });
+      }
     },
   });
 }

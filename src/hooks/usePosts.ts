@@ -5,9 +5,8 @@ import {
 } from "../lib/b3nd-client";
 import type { Identity } from "../lib/identity";
 import { useAuthStore } from "../stores/authStore";
-import { useNotebookStore } from "../stores/notebookStore";
-import type { Post, Visibility } from "../types";
-import { getPostUri, getPostsListUri } from "../utils/uris";
+import type { Post, Notebook, Visibility } from "../types";
+import { getPostUri, getPostsListUri, getNotebookMetaUri } from "../utils/uris";
 import { loadNotebookIdentity } from "./useNotebooks";
 
 // Store post identities in memory (loaded from user's account)
@@ -28,16 +27,12 @@ export function usePosts(
   visibility: Visibility = "public",
   password?: string
 ) {
-  const setPosts = useNotebookStore((s) => s.setPosts);
-
   return useQuery({
     queryKey: ["posts", notebookPubkey, visibility],
     queryFn: async () => {
       const uri = getPostsListUri(notebookPubkey);
       const posts = await b3ndClient.list<Post>(uri, { visibility, password });
-      const sortedPosts = posts.sort((a, b) => b.createdAt - a.createdAt);
-      setPosts(notebookPubkey, sortedPosts);
-      return sortedPosts;
+      return posts.sort((a, b) => b.createdAt - a.createdAt);
     },
     enabled: !!notebookPubkey,
   });
@@ -69,8 +64,6 @@ export function usePost(
 export function useCreatePost() {
   const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
-  const addPost = useNotebookStore((s) => s.addPost);
-  const updateNotebook = useNotebookStore((s) => s.updateNotebook);
 
   return useMutation({
     mutationFn: async (params: {
@@ -134,20 +127,33 @@ export function useCreatePost() {
       // Cache the identity
       postIdentities.set(postIdentity.publicKeyHex, postIdentity);
 
+      // Update notebook post count in B3nd
+      const notebookMetaUri = getNotebookMetaUri(params.notebookPubkey);
+      const currentNotebook = await b3ndClient.read<Notebook>(notebookMetaUri, {
+        visibility: params.visibility,
+        password: params.password,
+      });
+
+      if (currentNotebook) {
+        const updatedNotebook: Notebook = {
+          ...currentNotebook,
+          postCount: currentNotebook.postCount + 1,
+          updatedAt: Date.now(),
+        };
+
+        await b3ndClient.write(notebookMetaUri, updatedNotebook, notebookIdentity, {
+          visibility: params.visibility,
+          password: params.password,
+        });
+      }
+
       return post;
     },
     onSuccess: (post) => {
-      addPost(post.notebookPubkey, post);
       queryClient.invalidateQueries({ queryKey: ["posts", post.notebookPubkey] });
-
-      // Update notebook post count
-      const notebook = useNotebookStore.getState().getNotebook(post.notebookPubkey);
-      if (notebook) {
-        updateNotebook(post.notebookPubkey, {
-          postCount: notebook.postCount + 1,
-          updatedAt: Date.now(),
-        });
-      }
+      queryClient.invalidateQueries({ queryKey: ["notebook", post.notebookPubkey] });
+      queryClient.invalidateQueries({ queryKey: ["user-notebooks"] });
+      queryClient.invalidateQueries({ queryKey: ["public-notebooks"] });
     },
   });
 }
@@ -157,7 +163,6 @@ export function useCreatePost() {
  */
 export function useUpdatePost() {
   const queryClient = useQueryClient();
-  const updatePost = useNotebookStore((s) => s.updatePost);
   const session = useAuthStore((s) => s.session);
 
   return useMutation({
@@ -202,10 +207,8 @@ export function useUpdatePost() {
       return { notebookPubkey, post: updated };
     },
     onSuccess: ({ notebookPubkey, post }) => {
-      updatePost(notebookPubkey, post.pubkey, post);
-      queryClient.invalidateQueries({
-        queryKey: ["post", notebookPubkey, post.pubkey],
-      });
+      queryClient.invalidateQueries({ queryKey: ["post", notebookPubkey, post.pubkey] });
+      queryClient.invalidateQueries({ queryKey: ["posts", notebookPubkey] });
     },
   });
 }
@@ -215,8 +218,6 @@ export function useUpdatePost() {
  */
 export function useDeletePost() {
   const queryClient = useQueryClient();
-  const removePost = useNotebookStore((s) => s.removePost);
-  const updateNotebook = useNotebookStore((s) => s.updateNotebook);
   const session = useAuthStore((s) => s.session);
 
   return useMutation({
@@ -246,20 +247,31 @@ export function useDeletePost() {
       // Clear from cache
       postIdentities.delete(postPubkey);
 
-      return params;
-    },
-    onSuccess: ({ notebookPubkey, postPubkey }) => {
-      removePost(notebookPubkey, postPubkey);
-      queryClient.invalidateQueries({ queryKey: ["posts", notebookPubkey] });
+      // Update notebook post count in B3nd
+      const notebookMetaUri = getNotebookMetaUri(notebookPubkey);
+      const currentNotebook = await b3ndClient.read<Notebook>(notebookMetaUri, {
+        visibility: params.visibility,
+      });
 
-      // Update notebook post count
-      const notebook = useNotebookStore.getState().getNotebook(notebookPubkey);
-      if (notebook) {
-        updateNotebook(notebookPubkey, {
-          postCount: Math.max(0, notebook.postCount - 1),
+      if (currentNotebook) {
+        const updatedNotebook: Notebook = {
+          ...currentNotebook,
+          postCount: Math.max(0, currentNotebook.postCount - 1),
           updatedAt: Date.now(),
+        };
+
+        await b3ndClient.write(notebookMetaUri, updatedNotebook, notebookIdentity, {
+          visibility: params.visibility,
         });
       }
+
+      return params;
+    },
+    onSuccess: ({ notebookPubkey }) => {
+      queryClient.invalidateQueries({ queryKey: ["posts", notebookPubkey] });
+      queryClient.invalidateQueries({ queryKey: ["notebook", notebookPubkey] });
+      queryClient.invalidateQueries({ queryKey: ["user-notebooks"] });
+      queryClient.invalidateQueries({ queryKey: ["public-notebooks"] });
     },
   });
 }

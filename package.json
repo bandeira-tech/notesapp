@@ -10,10 +10,12 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "seed": "tsx cli/seed.ts",
+    "cli": "tsx"
   },
   "dependencies": {
-    "@bandeira-tech/b3nd-web": "^0.3.0",
+    "@bandeira-tech/b3nd-web": "^0.4.0",
     "@tanstack/react-query": "^5.90.2",
     "date-fns": "^4.1.0",
     "i18next": "^25.7.3",
@@ -29,12 +31,15 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.3",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.3",
     "autoprefixer": "^10.4.16",
+    "dotenv": "^17.2.3",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.21.0",
     "typescript": "~5.8.3",
     "vite": "^7.1.7"
   }

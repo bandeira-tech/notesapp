@@ -56,24 +56,33 @@ export function getPublicNotebooksListUri(appPubkey: string): string {
 }
 
 /**
- * Get URI for user's notebook reference (stored in user account via proxyWrite)
- * Uses :key which resolves to user's pubkey on the server
+ * Get URI for user's notebook index (single file with all notebook refs)
+ * Stored in user account via proxyWrite
  */
-export function getUserNotebookRefUri(notebookPubkey: string): string {
-  return `mutable://accounts/:key/notebooks/${notebookPubkey}`;
+export function getUserNotebooksIndexUri(): string {
+  return `mutable://accounts/:key/notebooks-index`;
 }
 
 /**
- * Get URI for listing user's notebooks (in user account)
+ * @deprecated Use getUserNotebooksIndexUri() instead
  */
 export function getUserNotebooksListUri(): string {
-  return `mutable://accounts/:key/notebooks`;
+  return getUserNotebooksIndexUri();
 }
 
 /**
- * Get URI for notebook's encrypted private key (stored in user account via proxyWrite)
+ * Get URI for user's notebook keys index (single file with all notebook private keys)
+ * Stored in user account via proxyWrite
+ */
+export function getNotebookKeysIndexUri(): string {
+  return `mutable://accounts/:key/notebook-keys-index`;
+}
+
+/**
+ * @deprecated Use getNotebookKeysIndexUri() instead
  */
 export function getNotebookKeyUri(notebookPubkey: string): string {
+  // Legacy: return individual file path (will be migrated to index)
   return `mutable://accounts/:key/notebook-keys/${notebookPubkey}`;
 }
 

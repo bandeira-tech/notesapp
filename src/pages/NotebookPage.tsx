@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNotebook } from "../hooks/useNotebooks";
 import { usePosts } from "../hooks/usePosts";
 import { CreatePostForm } from "../components/posts/CreatePostForm";
 import { PostCard } from "../components/posts/PostCard";
+import { EditNotebookModal } from "../components/notebooks/EditNotebookModal";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { ArrowLeft, Settings, Share2, Lock } from "lucide-react";
@@ -24,8 +25,11 @@ export function NotebookPage() {
   const [password, setPassword] = useState("");
   const [passwordSubmitted, setPasswordSubmitted] = useState(false);
 
-  // Determine visibility from navigation state, local store, or default to public
-  const visibility: Visibility = useMemo(() => {
+  // State for edit modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Initial visibility guess from navigation state, local store, or default to public
+  const initialVisibility: Visibility = useMemo(() => {
     // Check if passed via navigation state
     const stateVisibility = (location.state as { visibility?: Visibility })?.visibility;
     if (stateVisibility) return stateVisibility;
@@ -38,23 +42,33 @@ export function NotebookPage() {
     return "public";
   }, [location.state, getLocalNotebook, notebookPubkey]);
 
+  // Track current visibility (updates when notebook data changes)
+  const [currentVisibility, setCurrentVisibility] = useState<Visibility>(initialVisibility);
+
   // For protected notebooks, need password before fetching
-  const effectivePassword = visibility === "protected" && passwordSubmitted ? password : undefined;
+  const effectivePassword = currentVisibility === "protected" && passwordSubmitted ? password : undefined;
 
   const { data: notebook, isLoading: notebookLoading, error: notebookError } = useNotebook(
     notebookPubkey!,
-    visibility,
+    currentVisibility,
     effectivePassword
   );
 
+  // Update current visibility when notebook data loads
+  useEffect(() => {
+    if (notebook?.visibility) {
+      setCurrentVisibility(notebook.visibility);
+    }
+  }, [notebook?.visibility]);
+
   const { data: posts, isLoading: postsLoading } = usePosts(
     notebookPubkey!,
-    visibility,
+    currentVisibility,
     effectivePassword
   );
 
   // Show password prompt for protected notebooks
-  if (visibility === "protected" && !passwordSubmitted) {
+  if (currentVisibility === "protected" && !passwordSubmitted) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-theme-bg-primary">
         <div className="bg-theme-bg-secondary rounded-xl shadow-lg p-8 max-w-md w-full mx-4">
@@ -112,11 +126,11 @@ export function NotebookPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <h2 className="text-2xl font-bold text-theme-text-primary mb-2">
-          {visibility === "protected" && passwordSubmitted
+          {currentVisibility === "protected" && passwordSubmitted
             ? t("notebook.wrongPassword")
             : t("notebook.notFound")}
         </h2>
-        {visibility === "protected" && passwordSubmitted && (
+        {currentVisibility === "protected" && passwordSubmitted && (
           <Button
             onClick={() => setPasswordSubmitted(false)}
             variant="ghost"
@@ -184,7 +198,11 @@ export function NotebookPage() {
                 <Share2 size={18} />
               </Button>
               {isOwner && (
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditModalOpen(true)}
+                >
                   <Settings size={18} />
                 </Button>
               )}
@@ -226,6 +244,23 @@ export function NotebookPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Edit notebook modal */}
+      {isOwner && (
+        <EditNotebookModal
+          isOpen={isEditModalOpen}
+          onClose={(newPassword) => {
+            setIsEditModalOpen(false);
+            // Update password if changed to protected
+            if (newPassword !== undefined) {
+              setPassword(newPassword);
+              setPasswordSubmitted(true);
+            }
+          }}
+          notebook={notebook}
+          password={effectivePassword}
+        />
       )}
     </div>
   );

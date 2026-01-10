@@ -90,18 +90,14 @@ export interface Reaction {
 
 /**
  * Public notebook index entry (stored in app account)
+ * Only stores immutable reference data - resolve actual metadata from notebook account
  */
 export interface PublicNotebookEntry {
   pubkey: string;
-  title: string;
-  description?: string;
   author: {
     pubkey: string;
-    name?: string;
   };
-  postCount: number;
   createdAt: number;
-  updatedAt: number;
 }
 
 /**
