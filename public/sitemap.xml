@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Main Pages -->
+  <url>
+    <loc>https://firecat.notes/</loc>
+    <lastmod>2026-01-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://firecat.notes/discover</loc>
+    <lastmod>2026-01-16</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!--
+    Dynamic notebook and post URLs should be added here.
+
+    For production, consider implementing a dynamic sitemap generation:
+    1. Server-side solution that queries the B3nd network for public notebooks/posts
+    2. Build-time static generation using a script
+    3. Dynamic sitemap route that generates XML on-the-fly
+
+    Example entries:
+    <url>
+      <loc>https://firecat.notes/notebook/{notebookPubkey}</loc>
+      <lastmod>2026-01-16</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+    <url>
+      <loc>https://firecat.notes/notebook/{notebookPubkey}/post/{postPubkey}</loc>
+      <lastmod>2026-01-16</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.7</priority>
+    </url>
+  -->
+</urlset>

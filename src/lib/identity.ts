@@ -10,7 +10,6 @@
 import {
   generateSigningKeyPair,
   createAuthenticatedMessageWithHex,
-  deriveKeyFromSeed,
   encryptSymmetric,
   decryptSymmetric,
 } from "@bandeira-tech/b3nd-web/encrypt";

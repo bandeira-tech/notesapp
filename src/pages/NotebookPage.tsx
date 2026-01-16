@@ -11,6 +11,8 @@ import { Input } from "../components/ui/Input";
 import { ArrowLeft, Settings, Share2, Lock } from "lucide-react";
 import { useAuthStore } from "../stores/authStore";
 import { useNotebookStore } from "../stores/notebookStore";
+import { SEO } from "../components/seo/SEO";
+import { NotebookStructuredData } from "../components/seo/StructuredData";
 import type { Visibility } from "../types";
 
 export function NotebookPage() {
@@ -146,8 +148,28 @@ export function NotebookPage() {
 
   const isOwner = session?.username === notebook.author.pubkey;
 
+  // Generate SEO-friendly description
+  const seoDescription = notebook.description ||
+    `A notebook by ${notebook.author.name || notebook.author.pubkey} on Firecat Notes. ${notebook.postCount} posts in this decentralized notebook.`;
+
+  const canonicalUrl = `${window.location.origin}/notebook/${notebookPubkey}`;
+
   return (
     <div className="min-h-screen bg-theme-bg-primary">
+      {/* SEO Meta Tags */}
+      <SEO
+        title={notebook.title}
+        description={seoDescription}
+        canonicalUrl={canonicalUrl}
+        image={notebook.coverImage}
+        type="website"
+      />
+      {/* Structured Data */}
+      <NotebookStructuredData
+        notebook={notebook}
+        url={canonicalUrl}
+      />
+
       {/* Header */}
       <div className="bg-theme-bg-secondary border-b border-theme-border-light">
         <div className="max-w-4xl mx-auto px-4 py-6">

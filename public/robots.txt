@@ -1,0 +1,17 @@
+# Firecat Notes - robots.txt
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Crawl-delay (optional - can help reduce server load)
+# User-agent: *
+# Crawl-delay: 10
+
+# Disallow private/protected content paths
+# Note: These are handled by the app, but good to declare
+Disallow: /api/
+Disallow: /*?password=*
+
+# Sitemap location
+Sitemap: https://firecat.notes/sitemap.xml

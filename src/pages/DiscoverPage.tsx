@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { usePublicNotebooks } from "../hooks/useNotebooks";
 import { NotebookCard } from "../components/notebooks/NotebookCard";
 import { Compass, TrendingUp } from "lucide-react";
+import { SEO } from "../components/seo/SEO";
 
 export function DiscoverPage() {
   const navigate = useNavigate();
@@ -17,8 +18,18 @@ export function DiscoverPage() {
     );
   }
 
+  const canonicalUrl = `${window.location.origin}/discover`;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* SEO Meta Tags */}
+      <SEO
+        title={t("discover.title")}
+        description={t("discover.subtitle") || "Discover public notebooks from the Firecat community. Explore trending, recent, and popular decentralized content."}
+        canonicalUrl={canonicalUrl}
+        type="website"
+      />
+
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <Compass size={32} className="text-primary-600" />

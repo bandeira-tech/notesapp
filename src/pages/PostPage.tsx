@@ -1,8 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { usePost } from "../hooks/usePosts";
+import { useNotebook } from "../hooks/useNotebooks";
 import { PostCard } from "../components/posts/PostCard";
 import { Button } from "../components/ui/Button";
 import { ArrowLeft, ExternalLink } from "lucide-react";
+import { SEO } from "../components/seo/SEO";
+import { PostStructuredData } from "../components/seo/StructuredData";
 
 export function PostPage() {
   const { notebookPubkey, postPubkey } = useParams<{
@@ -11,7 +14,10 @@ export function PostPage() {
   }>();
   const navigate = useNavigate();
 
-  const { data: post, isLoading } = usePost(notebookPubkey!, postPubkey!);
+  const { data: post, isLoading: postLoading } = usePost(notebookPubkey!, postPubkey!);
+  const { data: notebook, isLoading: notebookLoading } = useNotebook(notebookPubkey!, "public");
+
+  const isLoading = postLoading || notebookLoading;
 
   if (isLoading) {
     return (
@@ -21,7 +27,7 @@ export function PostPage() {
     );
   }
 
-  if (!post) {
+  if (!post || !notebook) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -32,8 +38,38 @@ export function PostPage() {
     );
   }
 
+  // Generate SEO-friendly description from post content
+  const seoDescription = post.content.length > 160
+    ? post.content.substring(0, 157) + "..."
+    : post.content;
+
+  const postTitle = post.content.length > 60
+    ? post.content.substring(0, 60) + "..."
+    : post.content;
+
+  const canonicalUrl = `${window.location.origin}/notebook/${notebookPubkey}/post/${postPubkey}`;
+
   return (
     <div className="min-h-screen bg-peaceful-cream">
+      {/* SEO Meta Tags */}
+      <SEO
+        title={postTitle}
+        description={seoDescription}
+        canonicalUrl={canonicalUrl}
+        image={post.images?.[0] || notebook.coverImage}
+        type="article"
+        author={post.author.name || post.author.pubkey}
+        publishedTime={new Date(post.createdAt).toISOString()}
+        modifiedTime={new Date(post.updatedAt).toISOString()}
+        tags={["notebook", "firecat", "decentralized"]}
+      />
+      {/* Structured Data */}
+      <PostStructuredData
+        post={post}
+        notebook={notebook}
+        url={canonicalUrl}
+      />
+
       <div className="max-w-3xl mx-auto px-4 py-8">
         <button
           onClick={() => navigate(`/notebook/${notebookPubkey}`)}
